@@ -54,9 +54,6 @@ from tetris import ploops
 from tetris.utils import Bunch, plot_learning_curve
 
 
-###
-###  INIT
-###
 time_id = datetime.now().strftime('%Y_%m_%d_%H_%M')
 name_id = "_stew"
 run_id = time_id + name_id

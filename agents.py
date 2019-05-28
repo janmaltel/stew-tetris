@@ -1,13 +1,10 @@
 import numpy as np
-
 import stew
-# from stew.utils import create_ridge_matrix, create_diff_matrix
 from domtools.domtools.domfilter import dom_filter
 from tetris import tetromino
 from numba import njit
 from scipy.stats import binom_test
 from sklearn.linear_model import LinearRegression
-# from statsmodels.stats.proportion import proportions_ztest
 from stew.stew.mlogit import StewMultinomialLogit
 import gc
 import cma

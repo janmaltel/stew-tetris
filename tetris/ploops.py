@@ -1,4 +1,5 @@
-from tetris import agents, game
+from tetris import game
+import agents
 from .utils import plot_individual_agent, plot_analysis
 import numpy as np
 import random
