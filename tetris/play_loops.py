@@ -42,7 +42,6 @@ def m_learning_play_loop(p, seed, plot_individual=False, return_action_count=Fal
     _, test_results_ix, testing_time, tested_weights_ix, weights_storage_ix = \
         environment.play_m_learning(plots_path=p.plots_path,
                                     plot_analysis_fc=plot_analysis,
-                                    test_every=p.test_every,
                                     num_tests=p.num_tests,
                                     num_test_games=p.num_test_games,
                                     test_points=p.test_points,

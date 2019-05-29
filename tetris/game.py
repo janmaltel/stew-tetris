@@ -59,7 +59,7 @@ class Tetris:
             self.game_over = self.current_state.terminal_state
         return self.cleared_lines
 
-    def play_m_learning(self, testing_time, plots_path, plot_analysis_fc, test_every=0, num_tests=1, num_test_games=0,
+    def play_m_learning(self, testing_time, plots_path, plot_analysis_fc, num_tests=1, num_test_games=0,
                         test_points=None, test_environment=None, episode=0, agent_ix=0, store_features=False):
         self.reset()
         test_results = np.zeros((num_tests, num_test_games))

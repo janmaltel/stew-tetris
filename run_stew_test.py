@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import multiprocessing
 import numpy as np
-from tetris import ploops
+from tetris import play_loops
 from tetris.utils import Bunch, plot_learning_curve
 
 
@@ -29,26 +29,11 @@ param_dict = dict(
                   verbose_stew=True,
 
                   regularization = "stew",  # can be either "stew", "ols", "ridge", or "nonnegative".
-                  # stew=True,
-                  # ols=False,
-                  # ridge=False,
-                  # nonnegative=False,
                   rollout_length=10,  # The third value is important. It's the variable m in the paper.
                   avg_expands_per_children=7,  # The third value is important. It's the variable m in the paper.
                   lambda_max=4,  # min regularization strength.
                   lambda_min=-8.0,  # max regularization strength.
                   num_lambdas=100,  # number of tested reg strengths.
-
-                  # Tetris params
-                  num_columns=10,
-                  num_rows=10,
-                  feature_type='bcts',
-                  max_cleared_test_lines=200000,
-
-                  test_every=20,
-
-                  # Additional params. Not important for here.
-                  # IGNORE
                   dominance_filter=True,
                   cumu_dom_filter=True,
                   rollout_dom_filter=True,
@@ -60,7 +45,13 @@ param_dict = dict(
                   feature_directors=None,
                   learn_periodicity=100,
                   learn_every_step_until=50,
-                  max_batch_size=50)
+                  max_batch_size=50,
+
+                  # Tetris params
+                  num_columns=10,
+                  num_rows=10,
+                  feature_type='bcts',
+                  max_cleared_test_lines=200000)
 
 param_dict["plots_path"] = plots_path
 plot_individual = False
@@ -74,7 +65,7 @@ ncpus = multiprocessing.cpu_count()
 print("NUMBER OF CPUS: " + str(ncpus))
 
 pool = multiprocessing.Pool(np.minimum(ncpus, p.num_agents))
-results = [pool.apply_async(ploops.m_learning_play_loop, (p, seed, plot_individual)) for seed in np.arange(p.num_agents)]
+results = [pool.apply_async(play_loops.m_learning_play_loop, (p, seed, plot_individual)) for seed in np.arange(p.num_agents)]
 
 test_results = [results[ix].get()[0] for ix in np.arange(p.num_agents)]
 test_results = np.stack(test_results, axis=0)
