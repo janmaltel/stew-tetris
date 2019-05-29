@@ -16,6 +16,7 @@ def create_ridge_matrix(num_features):
     return D
 
 
+
 # @njit
 def multi_class_error(predicted_choices, true_choices, num_choices=None):
     if num_choices is None:

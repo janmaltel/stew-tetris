@@ -13,7 +13,6 @@ class State:
                  feature_type='bcts'):
         self.representation = representation
         if lowest_free_rows is None:
-            # raise ValueError("Should not calc_lowest_free_rows.")
             self.lowest_free_rows = calc_lowest_free_rows(self.representation)
         else:
             self.lowest_free_rows = lowest_free_rows
@@ -31,11 +30,8 @@ class State:
         self.cleared_rows_relative_to_anchor = self.clear_lines(changed_lines=changed_lines)
 
         self.features = None
-        # self.calc_feature_values()
         self.terminal_state = check_terminal(self.representation, self.n_legal_rows)  # self.is_terminal()
-        # TODO: change reward back to -10??
         self.reward = 0 if self.terminal_state else self.n_cleared_lines
-        # self.reward = 0 if self.terminal_state else self.n_cleared_lines
         self.value_estimate = 0.0
 
     def __repr__(self):
@@ -54,12 +50,6 @@ class State:
         if addRBF:
             features = np.append(features, np.exp(-(np.mean(self.lowest_free_rows) - np.arange(5) * self.n_legal_rows / 4)**2 / (2*(self.n_legal_rows / 5)**2)))
         return features
-
-    # TODO: Implement order / directions...
-    # def get_features_with_intercept(self):
-    #     if self.features is None:
-    #         self.calc_feature_values()
-    #     return np.insert(self.features, obj=0, values=1.)
 
     def print_board(self):
         for row_ix in range(self.n_legal_rows):
@@ -88,23 +78,18 @@ class State:
         return string
 
     def clear_lines(self, changed_lines):
-        is_full, self.n_cleared_lines, self.representation, self.lowest_free_rows = clear_lines_jitted(changed_lines,
-                                                                                                       self.representation,
-                                                                                                       self.lowest_free_rows,
-                                                                                                       self.num_columns)
+        is_full, self.n_cleared_lines, self.representation, self.lowest_free_rows = \
+            clear_lines_jitted(changed_lines,
+                               self.representation,
+                               self.lowest_free_rows,
+                               self.num_columns)
         return is_full
 
     def calc_feature_values(self):
-        if self.feature_type == 'super_simple':
-            self.calc_super_simple_features()
-        elif self.feature_type == 'bcts':
+        if self.feature_type == 'bcts':
             self.calc_bcts_features()
-        # elif self.feature_type == "adjusted_bcts":
-        #     self.calc_bcts_features(standardize_by=self.feature_stds)
-        elif self.feature_type == 'simple':
-            self.calc_simple_features()
-        elif self.feature_type == "standardized_bcts":
-            self.calc_standardized_bcts_features()
+        else:
+            raise ValueError("Only 'bcts' features implemented.")
 
     def calc_bcts_features(self):
         features = np.zeros(self.num_features, dtype=np.float32)
@@ -116,51 +101,7 @@ class State:
                                                                  representation=self.representation,
                                                                  num_rows=self.n_legal_rows,
                                                                  num_columns=self.num_columns)
-        # ['rows_with_holes', 'column_transitions', 'holes', 'landing_height', 'cumulative_wells',
-        #                  'row_transitions', 'eroded', 'hole_depth']
-        # self.features = features / np.array([2.18246089, 4.42735771, 3.0698914, 2.31688581, 3.1093846, 4.0334024, 0.46720078, 8.35394364])
         self.features = features
-
-    def calc_standardized_bcts_features(self, convert_to_numpy=True, standardize=True):
-        features = np.zeros(self.num_features, dtype=np.float32)
-        eroded_pieces = np.sum(self.cleared_rows_relative_to_anchor * self.pieces_per_changed_row)
-        n_cleared_lines = np.sum(self.cleared_rows_relative_to_anchor)
-        features[0] = eroded_pieces * n_cleared_lines
-        features[2] = self.anchor_row + self.landing_height_bonus
-        features[[1, 3, 4, 5, 6, 7]] = get_feature_values_jitted(lowest_free_rows=self.lowest_free_rows,
-                                                                 representation=self.representation,
-                                                                 num_rows=self.n_legal_rows,
-                                                                 num_columns=self.num_columns)
-        # ['eroded', 'rows_with_holes', 'landing_height', 'column_transitions', 'holes', 'cumulative_wells',
-        #  'row_transitions', 'hole_depth']
-        self.features = features / np.array([4.0334024, 2.18246089, 2.31688581, 4.42735771, 3.0698914, 3.1093846, 0.46720078, 8.35394364])
-
-    # def calc_simple_features(self, convert_to_numpy=False):
-    #     features = np.zeros(self.num_features, dtype=np.float32)
-    #     features[:] = get_relevant_holes_jitted4(lowest_free_rows=self.lowest_free_rows,
-    #                                              representation=self.representation,
-    #                                              anchor_row=self.anchor_row,
-    #                                              landing_height_bonus=self.landing_height_bonus,
-    #                                              num_rows=self.n_legal_rows,
-    #                                              num_columns=self.num_columns)
-    #     # holes, cumulative_wells, cumulative_wells_squared, landing_height, avg_free_row, avg_free_row_squared
-    #     # features[1] = self.anchor_row - np.min(self.lowest_free_rows) #  self.landing_height_bonus
-    #     # features[2] = np.mean(self.lowest_free_rows) ** 2 #  self.landing_height_bonus
-    #     self.features = torch.from_numpy(features).unsqueeze(0)
-    #     if convert_to_numpy:
-    #         self.features = self.features.numpy().flatten()
-
-    def calc_super_simple_features(self, convert_to_numpy=False):
-        features = np.zeros(self.num_features, dtype=np.float32)
-        features[[0, 2, 3]] = get_super_simple_jitted(lowest_free_rows=self.lowest_free_rows,
-                                              representation=self.representation,
-                                              num_columns=self.num_columns)
-        eroded_pieces = np.sum(self.cleared_rows_relative_to_anchor * self.pieces_per_changed_row)
-        features[1] = eroded_pieces
-        self.features = features
-        # self.features = torch.from_numpy(features).unsqueeze(0)
-        # if convert_to_numpy:
-        #     self.features = self.features.numpy().flatten()
 
 
 @njit
@@ -226,126 +167,6 @@ def calc_lowest_free_rows(rep):
                 break
         lowest_free_rows[col_ix] = lowest
     return lowest_free_rows
-
-
-@njit
-def get_relevant_holes_jitted4(lowest_free_rows, representation, anchor_row, landing_height_bonus, num_rows, num_columns):
-    holes = 0.0
-    cumulative_wells = 0.0
-    min_lowest_free_row, max_lowest_free_row, avg_free_row = minmaxavg_jitted(lowest_free_rows)
-    landing_height = anchor_row + landing_height_bonus - min_lowest_free_row
-    # n_landing_positions = lowest_free_rows[1:] - lowest_free_rows[:-1]
-    diffs = lowest_free_rows[1:] - lowest_free_rows[:-1]
-    n_landing_positions = len(set(diffs[(-2 < diffs) & (diffs < 2)]))
-    # min_lowest_free_row = np.maximum(np.min(lowest_free_rows)-3, 0)
-    # max_lowest_free_row = np.max(lowest_free_rows)
-    for col_ix, lowest_free_row in enumerate(lowest_free_rows):
-        # col = representation[min_lowest_free_row:lowest_free_row, col_ix]
-
-        col = representation[:lowest_free_row, col_ix]
-        for row_ix, cell in enumerate(col):
-            if cell == 0:
-                # Holes
-                holes += 1 * (0.7 + row_ix / 6)
-
-        if col_ix == 0:
-            max_well_possibility = lowest_free_rows[col_ix + 1]
-        elif col_ix == num_columns - 1:
-            max_well_possibility = lowest_free_rows[col_ix - 1]
-        else:
-            lowest_free_row_left = lowest_free_rows[col_ix - 1]
-            lowest_free_row_right = lowest_free_rows[col_ix + 1]
-            max_well_possibility = np.minimum(lowest_free_row_left, lowest_free_row_right)
-        local_well_streak = 0
-        if max_well_possibility > lowest_free_row:
-            for row_ix in range(lowest_free_row, max_well_possibility):
-                if col_ix == 0:
-                    cell_left = 1
-                    cell_right = representation[row_ix, col_ix + 1]
-                elif col_ix == num_columns - 1:
-                    cell_left = representation[row_ix, col_ix - 1]
-                    cell_right = 1
-                else:
-                    cell_left = representation[row_ix, col_ix - 1]
-                    cell_right = representation[row_ix, col_ix + 1]
-
-                if cell_left and cell_right:
-                    local_well_streak += 1
-                    cumulative_wells += local_well_streak
-                    # cumulative_wells += 1
-                # else:
-                #     local_well_streak = 0
-    cumulative_wells = 1 + cumulative_wells / 10
-    avg_free_row = 1 + avg_free_row / 10
-    cumulative_wells_squared = cumulative_wells ** 2
-    avg_free_row_squared = avg_free_row ** 2
-    features = [holes, cumulative_wells, cumulative_wells_squared,
-                landing_height, avg_free_row, avg_free_row_squared, n_landing_positions]
-    return features
-
-
-@njit
-def get_super_simple_jitted(lowest_free_rows, representation, num_columns):  # anchor_row, landing_height_bonus, num_rows,
-    holes = 0.0
-    cumulative_wells = 0.0
-    # min_lowest_free_row, max_lowest_free_row, avg_free_row = minmaxavg_jitted(lowest_free_rows)
-    # landing_height = anchor_row + landing_height_bonus - min_lowest_free_row
-    diffs = lowest_free_rows[1:] - lowest_free_rows[:-1]
-    n_landing_positions = len(set(diffs[(-2 < diffs) & (diffs < 2)]))
-    for col_ix, lowest_free_row in enumerate(lowest_free_rows):
-        col = representation[:lowest_free_row, col_ix]
-        local_well_streak = 0
-        for row_ix, cell in enumerate(col):
-            if cell == 0:
-                # Holes
-                holes += 1 * (0.8 + row_ix / 8)
-                # holes += 1
-
-                # Count capped wells as well!
-                if col_ix == 0:
-                    cell_left = 1
-                    cell_right = representation[row_ix, col_ix + 1]
-                elif col_ix == num_columns - 1:
-                    cell_left = representation[row_ix, col_ix - 1]
-                    cell_right = 1
-                else:
-                    cell_left = representation[row_ix, col_ix - 1]
-                    cell_right = representation[row_ix, col_ix + 1]
-
-                if cell_left and cell_right:
-                    local_well_streak += 1
-                    cumulative_wells += local_well_streak
-                else:
-                    local_well_streak = 0
-
-        if col_ix == 0:
-            max_well_possibility = lowest_free_rows[col_ix + 1]
-        elif col_ix == num_columns - 1:
-            max_well_possibility = lowest_free_rows[col_ix - 1]
-        else:
-            lowest_free_row_left = lowest_free_rows[col_ix - 1]
-            lowest_free_row_right = lowest_free_rows[col_ix + 1]
-            max_well_possibility = np.minimum(lowest_free_row_left, lowest_free_row_right)
-        local_well_streak = 0
-        if max_well_possibility > lowest_free_row:
-            for row_ix in range(lowest_free_row, max_well_possibility):
-                if col_ix == 0:
-                    cell_left = 1
-                    cell_right = representation[row_ix, col_ix + 1]
-                elif col_ix == num_columns - 1:
-                    cell_left = representation[row_ix, col_ix - 1]
-                    cell_right = 1
-                else:
-                    cell_left = representation[row_ix, col_ix - 1]
-                    cell_right = representation[row_ix, col_ix + 1]
-
-                if cell_left and cell_right:
-                    local_well_streak += 1
-                    cumulative_wells += local_well_streak
-                else:
-                    local_well_streak = 0
-    features = [holes, cumulative_wells/5, n_landing_positions]
-    return features
 
 
 @njit
