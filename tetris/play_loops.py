@@ -1,19 +1,16 @@
 from tetris import game
-import mLearning
+import mlearning
 from .utils import plot_individual_agent, plot_analysis
 import numpy as np
 import random
 import time
 import os
 
-"""
-This file 
-"""
 
 def m_learning_play_loop(p, seed, plot_individual=False, return_action_count=False):
     random.seed(seed + p.seed)
     np.random.seed(seed + p.seed)
-    player = mLearning.MLearning(feature_type=p.feature_type,
+    player = mlearning.MLearning(feature_type=p.feature_type,
                                  num_columns=p.num_columns,
                                  verbose=p.verbose, verbose_stew=p.verbose_stew,
                                  avg_expands_per_children=p.avg_expands_per_children,

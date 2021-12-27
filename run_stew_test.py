@@ -7,7 +7,7 @@ from tetris.utils import Bunch, plot_learning_curve
 
 
 time_id = datetime.now().strftime('%Y_%m_%d_%H_%M')
-name_id = "_stew"
+name_id = "_stew_true_cumu"
 run_id = time_id + name_id
 
 run_id_path = os.path.join("experiments", run_id)
@@ -20,15 +20,15 @@ for path in [run_id_path, models_path, results_path, plots_path]:
 
 param_dict = dict(
                   # Run specifics
-                  num_agents=1,
-                  test_points=(1, 3, 7),  #  20, 50, 100, 200, 300
-                  num_tests=3,
+                  num_agents=2,
+                  test_points=(1, 3, 7, 20, 50),  #  20, 50, 100, 200, 300
+                  num_tests=5,
                   num_test_games=10,
                   seed=251,
                   verbose=False,
                   verbose_stew=True,
 
-                  regularization = "stew",  # can be either "stew", "ols", "ridge", or "nonnegative".
+                  regularization="stew",  # can be either "stew", "ols", "ridge", or "nonnegative".
                   rollout_length=10,  # The third value is important. It's the variable m in the paper.
                   avg_expands_per_children=7,  # The third value is important. It's the variable m in the paper.
                   lambda_max=4,  # min regularization strength.
@@ -37,7 +37,7 @@ param_dict = dict(
                   dominance_filter=True,
                   cumu_dom_filter=True,
                   rollout_dom_filter=True,
-                  rollout_cumu_dom_filter=True,
+                  rollout_cumu_dom_filter=False,
                   filter_best=False,
                   gamma=0.995,
                   delete_every=2,
